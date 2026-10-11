@@ -70,3 +70,19 @@ def _unquoted_whitespace(result: ParseResult) -> List[Issue]:
         for e in result.entries
         if e.quote is None and any(ch.isspace() for ch in e.value)
     ]
+
+
+def compare(env: ParseResult, example: ParseResult) -> List[Issue]:
+    """Report keys missing from env (E004) and keys not documented in example (W003)."""
+    env_keys = {e.key: e.line for e in env.entries}
+    example_keys = {e.key for e in example.entries}
+    issues = [
+        Issue("E004", ERROR, 0, f"{key} is defined in the example but missing", key)
+        for key in sorted(example_keys - set(env_keys))
+    ]
+    issues.extend(
+        Issue("W003", WARNING, line, f"{key} is not listed in the example", key)
+        for key, line in env_keys.items()
+        if key not in example_keys
+    )
+    return sorted(issues, key=lambda i: (i.line, i.code))
