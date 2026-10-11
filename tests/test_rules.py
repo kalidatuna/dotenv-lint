@@ -23,6 +23,12 @@ class RulesTest(unittest.TestCase):
         self.assertEqual([(i.code, i.line) for i in issues], [("E003", 3), ("E003", 4)])
         self.assertIn("line 1", issues[0].message)
 
+    def test_empty_value_warns(self):
+        self.assertEqual(codes("A=\n"), ["W001"])
+
+    def test_explicit_empty_string_is_fine(self):
+        self.assertEqual(codes('A=""\nB=\'\'\n'), [])
+
 
 if __name__ == "__main__":
     unittest.main()
