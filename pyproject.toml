@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dotenv-lint"
+dynamic = ["version"]
+description = "Zero-dependency linter for .env files"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+authors = [{ name = "kalidatuna" }]
+keywords = ["dotenv", "env", "lint", "config"]
+classifiers = [
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.scripts]
+dotenv-lint = "dotenv_lint.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/kalidatuna/dotenv-lint"
+
+[tool.setuptools]
+packages = ["dotenv_lint"]
+
+[tool.setuptools.dynamic]
+version = { attr = "dotenv_lint.__version__" }
