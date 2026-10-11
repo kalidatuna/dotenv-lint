@@ -1,0 +1,6 @@
+- id: dotenv-lint
+  name: dotenv-lint
+  description: Lint .env files for syntax errors and duplicate keys
+  entry: dotenv-lint
+  language: python
+  files: (^|/)\.env(\.[^/]+)?$

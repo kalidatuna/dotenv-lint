@@ -41,6 +41,19 @@ Example output:
 
 Line `0` means the issue concerns the whole file rather than one line.
 
+## pre-commit
+
+```yaml
+repos:
+  - repo: https://github.com/kalidatuna/dotenv-lint
+    rev: v0.1.0
+    hooks:
+      - id: dotenv-lint
+```
+
+The hook runs on files named `.env` or `.env.*`. Most projects do not commit
+real `.env` files, so this is mainly useful for `.env.example` and templates.
+
 ## Rules
 
 | Code | Severity | Description |
