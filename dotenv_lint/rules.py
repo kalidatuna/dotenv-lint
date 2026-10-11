@@ -29,6 +29,7 @@ def check(result: ParseResult) -> List[Issue]:
     for err in result.errors:
         issues.append(Issue("E001", ERROR, err.line, err.message))
     issues.extend(_invalid_keys(result))
+    issues.extend(_duplicate_keys(result))
     return sorted(issues, key=lambda i: (i.line, i.code))
 
 
@@ -38,3 +39,15 @@ def _invalid_keys(result: ParseResult) -> List[Issue]:
         for e in result.entries
         if not KEY_PATTERN.match(e.key)
     ]
+
+
+def _duplicate_keys(result: ParseResult) -> List[Issue]:
+    first_seen = {}
+    issues = []
+    for e in result.entries:
+        if e.key in first_seen:
+            msg = f"duplicate key {e.key!r} (first defined on line {first_seen[e.key]})"
+            issues.append(Issue("E003", ERROR, e.line, msg, e.key))
+        else:
+            first_seen[e.key] = e.line
+    return issues
