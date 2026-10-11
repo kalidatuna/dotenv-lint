@@ -56,6 +56,27 @@ class ParseQuotesTest(unittest.TestCase):
         result = parse('A="x"y')
         self.assertIn("after closing quote", result.errors[0].message)
 
+    def test_comment_after_closing_quote_is_allowed(self):
+        result = parse('A="x # not a comment" # real comment')
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.entries[0].value, "x # not a comment")
+
+
+class ParseExtrasTest(unittest.TestCase):
+    def test_export_prefix(self):
+        entry = parse("export API_KEY=abc").entries[0]
+        self.assertEqual((entry.key, entry.value), ("API_KEY", "abc"))
+
+    def test_inline_comment_on_unquoted_value(self):
+        entry = parse("PORT=8080 # http port").entries[0]
+        self.assertEqual(entry.value, "8080")
+
+    def test_hash_without_space_is_part_of_value(self):
+        entry = parse("COLOR=#ff0000").entries[0]
+        self.assertEqual(entry.value, "#ff0000")
+        entry = parse("URL=http://x/#frag").entries[0]
+        self.assertEqual(entry.value, "http://x/#frag")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -36,6 +36,8 @@ def parse(text: str) -> ParseResult:
         if "=" not in line:
             result.errors.append(ParseError(lineno, "expected KEY=VALUE"))
             continue
+        if line.startswith("export "):
+            line = line[len("export ") :].lstrip()
         key, rest = line.split("=", 1)
         rest = rest.strip()
         try:
@@ -53,7 +55,7 @@ _ESCAPES = {"n": "\n", "t": "\t", "r": "\r", '"': '"', "\\": "\\"}
 def _parse_value(rest: str):
     """Return (value, quote_char) for the text after '='."""
     if not rest or rest[0] not in ("'", '"'):
-        return rest, None
+        return _strip_inline_comment(rest), None
     quote = rest[0]
     chars = []
     i = 1
@@ -66,9 +68,17 @@ def _parse_value(rest: str):
             continue
         if ch == quote:
             trailing = rest[i + 1 :].strip()
-            if trailing:
+            if trailing and not trailing.startswith("#"):
                 raise ValueError("unexpected text after closing quote")
             return "".join(chars), quote
         chars.append(ch)
         i += 1
     raise ValueError("unterminated quoted value")
+
+
+def _strip_inline_comment(value: str) -> str:
+    """Drop a ' #...' comment from an unquoted value; '#' without a space is kept."""
+    for i, ch in enumerate(value):
+        if ch == "#" and i > 0 and value[i - 1] in " \t":
+            return value[:i].rstrip()
+    return value
