@@ -16,6 +16,13 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="dotenv-lint", description="Lint .env files.")
     ap.add_argument("files", nargs="*", default=[".env"], help="files to lint (default: .env)")
     ap.add_argument("-e", "--example", help="compare keys against this example file")
+    ap.add_argument("--strict", action="store_true", help="treat warnings as errors")
+    ap.add_argument(
+        "--ignore",
+        default="",
+        metavar="CODES",
+        help="comma-separated rule codes to skip, e.g. W001,W003",
+    )
     ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return ap
 
@@ -29,15 +36,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"dotenv-lint: {exc.filename}: {exc.strerror}", file=sys.stderr)
         return 2
 
+    ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
     failed = False
     for name, text in texts:
         result = parse(text)
         issues = check(result)
         if example is not None:
             issues = sorted(issues + compare(result, example), key=lambda i: (i.line, i.code))
+        issues = [i for i in issues if i.code not in ignored]
         for issue in issues:
             print(f"{name}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
-        failed = failed or any(i.severity == ERROR for i in issues)
+        failed = failed or any(args.strict or i.severity == ERROR for i in issues)
     return 1 if failed else 0
 
 

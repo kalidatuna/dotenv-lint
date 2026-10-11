@@ -51,6 +51,15 @@ class CliTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("E004", out)
 
+    def test_strict_fails_on_warnings(self):
+        path = self.write(".env", "A=\n")
+        self.assertEqual(self.run_cli(path, "--strict")[0], 1)
+
+    def test_ignore_skips_codes(self):
+        path = self.write(".env", "A=\nA=1\n")
+        code, out, _ = self.run_cli(path, "--ignore", "w001, e003")
+        self.assertEqual((code, out), (0, ""))
+
 
 if __name__ == "__main__":
     unittest.main()
