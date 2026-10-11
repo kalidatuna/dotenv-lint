@@ -36,6 +36,39 @@ def parse(text: str) -> ParseResult:
         if "=" not in line:
             result.errors.append(ParseError(lineno, "expected KEY=VALUE"))
             continue
-        key, value = line.split("=", 1)
-        result.entries.append(Entry(key.strip(), value.strip(), lineno))
+        key, rest = line.split("=", 1)
+        rest = rest.strip()
+        try:
+            value, quote = _parse_value(rest)
+        except ValueError as exc:
+            result.errors.append(ParseError(lineno, str(exc)))
+            continue
+        result.entries.append(Entry(key.strip(), value, lineno, quote))
     return result
+
+
+_ESCAPES = {"n": "\n", "t": "\t", "r": "\r", '"': '"', "\\": "\\"}
+
+
+def _parse_value(rest: str):
+    """Return (value, quote_char) for the text after '='."""
+    if not rest or rest[0] not in ("'", '"'):
+        return rest, None
+    quote = rest[0]
+    chars = []
+    i = 1
+    while i < len(rest):
+        ch = rest[i]
+        if quote == '"' and ch == "\\" and i + 1 < len(rest):
+            nxt = rest[i + 1]
+            chars.append(_ESCAPES.get(nxt, "\\" + nxt))
+            i += 2
+            continue
+        if ch == quote:
+            trailing = rest[i + 1 :].strip()
+            if trailing:
+                raise ValueError("unexpected text after closing quote")
+            return "".join(chars), quote
+        chars.append(ch)
+        i += 1
+    raise ValueError("unterminated quoted value")
