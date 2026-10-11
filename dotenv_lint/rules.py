@@ -31,6 +31,7 @@ def check(result: ParseResult) -> List[Issue]:
     issues.extend(_invalid_keys(result))
     issues.extend(_duplicate_keys(result))
     issues.extend(_empty_values(result))
+    issues.extend(_unquoted_whitespace(result))
     return sorted(issues, key=lambda i: (i.line, i.code))
 
 
@@ -59,4 +60,13 @@ def _empty_values(result: ParseResult) -> List[Issue]:
         Issue("W001", WARNING, e.line, f"{e.key} has an empty value", e.key)
         for e in result.entries
         if e.value == "" and e.quote is None
+    ]
+
+
+def _unquoted_whitespace(result: ParseResult) -> List[Issue]:
+    """Shells split unquoted values on whitespace, so `source .env` breaks."""
+    return [
+        Issue("W002", WARNING, e.line, f"{e.key} value contains whitespace; wrap it in quotes", e.key)
+        for e in result.entries
+        if e.quote is None and any(ch.isspace() for ch in e.value)
     ]

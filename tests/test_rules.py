@@ -29,6 +29,10 @@ class RulesTest(unittest.TestCase):
     def test_explicit_empty_string_is_fine(self):
         self.assertEqual(codes('A=""\nB=\'\'\n'), [])
 
+    def test_unquoted_whitespace_warns(self):
+        self.assertEqual(codes("GREETING=hello world\n"), ["W002"])
+        self.assertEqual(codes('GREETING="hello world"\n'), [])
+
 
 if __name__ == "__main__":
     unittest.main()
