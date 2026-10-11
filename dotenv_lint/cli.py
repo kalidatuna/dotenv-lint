@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+from dataclasses import asdict
 from pathlib import Path
 from typing import List, Optional
 
@@ -16,6 +18,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="dotenv-lint", description="Lint .env files.")
     ap.add_argument("files", nargs="*", default=[".env"], help="files to lint (default: .env)")
     ap.add_argument("-e", "--example", help="compare keys against this example file")
+    ap.add_argument("-f", "--format", choices=["text", "json"], default="text")
     ap.add_argument("--strict", action="store_true", help="treat warnings as errors")
     ap.add_argument(
         "--ignore",
@@ -38,15 +41,21 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
     failed = False
+    report = []
     for name, text in texts:
         result = parse(text)
         issues = check(result)
         if example is not None:
             issues = sorted(issues + compare(result, example), key=lambda i: (i.line, i.code))
         issues = [i for i in issues if i.code not in ignored]
-        for issue in issues:
-            print(f"{name}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
+        if args.format == "json":
+            report.extend(dict(asdict(i), file=name) for i in issues)
+        else:
+            for issue in issues:
+                print(f"{name}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
         failed = failed or any(args.strict or i.severity == ERROR for i in issues)
+    if args.format == "json":
+        print(json.dumps(report, indent=2))
     return 1 if failed else 0
 
 

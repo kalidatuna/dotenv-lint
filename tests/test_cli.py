@@ -1,5 +1,6 @@
 import contextlib
 import io
+import json
 import os
 import tempfile
 import unittest
@@ -59,6 +60,19 @@ class CliTest(unittest.TestCase):
         path = self.write(".env", "A=\nA=1\n")
         code, out, _ = self.run_cli(path, "--ignore", "w001, e003")
         self.assertEqual((code, out), (0, ""))
+
+    def test_json_output(self):
+        path = self.write(".env", "A=1\nA=2\n")
+        code, out, _ = self.run_cli(path, "--format", "json")
+        self.assertEqual(code, 1)
+        data = json.loads(out)
+        self.assertEqual(data[0]["code"], "E003")
+        self.assertEqual(data[0]["file"], path)
+        self.assertEqual(data[0]["key"], "A")
+
+    def test_json_output_empty_list_when_clean(self):
+        _, out, _ = self.run_cli(self.write(".env", "A=1\n"), "-f", "json")
+        self.assertEqual(json.loads(out), [])
 
 
 if __name__ == "__main__":
