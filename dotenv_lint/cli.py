@@ -22,13 +22,16 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Optional[List[str]] = None) -> int:
     args = build_parser().parse_args(argv)
-    example = None
-    if args.example:
-        example = parse(_read(args.example))
+    try:
+        example = parse(_read(args.example)) if args.example else None
+        texts = [(name, _read(name)) for name in args.files]
+    except OSError as exc:
+        print(f"dotenv-lint: {exc.filename}: {exc.strerror}", file=sys.stderr)
+        return 2
 
     failed = False
-    for name in args.files:
-        result = parse(_read(name))
+    for name, text in texts:
+        result = parse(text)
         issues = check(result)
         if example is not None:
             issues = sorted(issues + compare(result, example), key=lambda i: (i.line, i.code))
