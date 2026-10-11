@@ -74,6 +74,12 @@ class CliTest(unittest.TestCase):
         _, out, _ = self.run_cli(self.write(".env", "A=1\n"), "-f", "json")
         self.assertEqual(json.loads(out), [])
 
+    def test_utf8_bom_and_crlf_are_accepted(self):
+        path = os.path.join(self.tmp.name, ".env")
+        with open(path, "wb") as f:
+            f.write(b"\xef\xbb\xbfA=1\r\nB=2\r\n")
+        self.assertEqual(self.run_cli(path)[:2], (0, ""))
+
 
 if __name__ == "__main__":
     unittest.main()

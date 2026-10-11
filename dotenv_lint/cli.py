@@ -60,7 +60,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 def _read(name: str) -> str:
-    return Path(name).read_text(encoding="utf-8")
+    # utf-8-sig drops the BOM that some Windows editors prepend.
+    return Path(name).read_text(encoding="utf-8-sig")
 
 
 if __name__ == "__main__":
