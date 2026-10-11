@@ -1,0 +1,23 @@
+import unittest
+
+from dotenv_lint.parser import parse
+from dotenv_lint.rules import check
+
+
+def codes(text):
+    return [i.code for i in check(parse(text))]
+
+
+class RulesTest(unittest.TestCase):
+    def test_clean_file_has_no_issues(self):
+        self.assertEqual(codes("A=1\nB_2=x\n_C=y\n"), [])
+
+    def test_parse_errors_become_e001(self):
+        self.assertEqual(codes("NOPE\n"), ["E001"])
+
+    def test_invalid_key_names(self):
+        self.assertEqual(codes("1A=x\nA-B=x\nA B=x\n=x\n"), ["E002"] * 4)
+
+
+if __name__ == "__main__":
+    unittest.main()
