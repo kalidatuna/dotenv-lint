@@ -97,6 +97,13 @@ class CliTest(unittest.TestCase):
         example = self.write(".env.example", "A=\n")
         self.assertEqual(self.run_cli(env, "-e", example, "--strict")[0], 0)
 
+    def test_unknown_ignore_code_is_usage_error(self):
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            with self.assertRaises(SystemExit) as raised:
+                main(["--ignore", "W999"])
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn("W999", err.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

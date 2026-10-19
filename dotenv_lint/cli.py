@@ -30,8 +30,16 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
+RULE_CODES = frozenset({"E001", "E002", "E003", "E004", "W001", "W002", "W003"})
+
+
 def main(argv: Optional[List[str]] = None) -> int:
-    args = build_parser().parse_args(argv)
+    ap = build_parser()
+    args = ap.parse_args(argv)
+    ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
+    unknown = ignored - RULE_CODES
+    if unknown:
+        ap.error("unknown rule code(s): " + ", ".join(sorted(unknown)))
     try:
         example = parse(_read(args.example)) if args.example else None
         texts = [(name, _read(name)) for name in args.files]
@@ -42,7 +50,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"dotenv-lint: {exc.filename}: {exc.strerror}", file=sys.stderr)
         return 2
 
-    ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
     failed = False
     report = []
     if example is not None:
