@@ -39,7 +39,7 @@ def parse(text: str) -> ParseResult:
         if line.startswith(("export ", "export\t")):
             line = line[len("export") :].lstrip(" \t")
         key, rest = line.split("=", 1)
-        rest = rest.strip()
+        rest = "" if rest.startswith((" ", "\t")) and rest.lstrip().startswith("#") else rest.strip()
         try:
             value, quote = _parse_value(rest)
         except ValueError as exc:

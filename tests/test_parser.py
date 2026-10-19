@@ -82,6 +82,11 @@ class ParseExtrasTest(unittest.TestCase):
         self.assertEqual((entry.key, entry.value), ("API_KEY", "abc"))
         self.assertEqual(parse("exported=1").entries[0].key, "exported")
 
+    def test_comment_only_value_is_empty(self):
+        for source in ("A= # empty", "A=\t# empty"):
+            self.assertEqual(parse(source).entries[0].value, "")
+        self.assertEqual(parse("A=#literal").entries[0].value, "#literal")
+
 
 if __name__ == "__main__":
     unittest.main()
