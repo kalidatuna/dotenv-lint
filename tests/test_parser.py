@@ -87,6 +87,13 @@ class ParseExtrasTest(unittest.TestCase):
             self.assertEqual(parse(source).entries[0].value, "")
         self.assertEqual(parse("A=#literal").entries[0].value, "#literal")
 
+    def test_unicode_line_separator_stays_in_value(self):
+        for separator in ("\u2028", "\u0085", "\v", "\f"):
+            result = parse('A="left' + separator + 'right"\nB=2\r\n')
+            self.assertEqual(result.errors, [])
+            self.assertEqual(result.entries[0].value, "left" + separator + "right")
+            self.assertEqual(result.entries[1].line, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
