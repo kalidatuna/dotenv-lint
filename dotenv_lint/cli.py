@@ -16,7 +16,7 @@ from .rules import ERROR, check, compare
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="dotenv-lint", description="Lint .env files.")
-    ap.add_argument("files", nargs="*", default=[".env"], help="files to lint (default: .env)")
+    ap.add_argument("files", nargs="*", default=[".env"], help="files to lint; - reads stdin (default: .env)")
     ap.add_argument("-e", "--example", help="compare keys against this example file")
     ap.add_argument("-f", "--format", choices=["text", "json"], default="text")
     ap.add_argument("--strict", action="store_true", help="treat warnings as errors")
@@ -40,6 +40,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     unknown = ignored - RULE_CODES
     if unknown:
         ap.error("unknown rule code(s): " + ", ".join(sorted(unknown)))
+    if args.files.count("-") + int(args.example == "-") > 1:
+        ap.error("stdin may only be read once")
     try:
         example = parse(_read(args.example)) if args.example else None
         texts = [(name, _read(name)) for name in args.files]
@@ -78,6 +80,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 def _read(name: str) -> str:
+    if name == "-":
+        return sys.stdin.read().removeprefix("\ufeff")
     # utf-8-sig drops the BOM that some Windows editors prepend.
     return Path(name).read_text(encoding="utf-8-sig")
 

@@ -104,6 +104,17 @@ class CliTest(unittest.TestCase):
         self.assertEqual(raised.exception.code, 2)
         self.assertIn("W999", err.getvalue())
 
+    def test_stdin_input_and_bom(self):
+        from unittest.mock import patch
+        with patch("sys.stdin", io.StringIO("\ufeffA=1\nA=2\n")):
+            code, out, _ = self.run_cli("-", "-f", "json")
+        self.assertEqual(code, 1)
+        self.assertEqual(json.loads(out)[0]["file"], "-")
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as raised:
+                main(["-", "-e", "-"])
+        self.assertEqual(raised.exception.code, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
