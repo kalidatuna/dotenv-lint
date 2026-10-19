@@ -124,6 +124,19 @@ class CliTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(json.loads(out)[0]["code"], "E003")
 
+    def test_select_filters_both_files_and_ignore_wins(self):
+        env = self.write(".env", "A=\nA=1\n")
+        example = self.write(".env.example", "invalid\n")
+        code, out, _ = self.run_cli(env, "-e", example, "--select", "w001", "--strict")
+        self.assertEqual(code, 1)
+        self.assertIn("W001", out)
+        self.assertNotIn("E001", out)
+        self.assertNotIn("E003", out)
+        self.assertEqual(self.run_cli(env, "--select", "w001", "--ignore", "W001")[0], 0)
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                main(["--select", "TYPO"])
+
 
 if __name__ == "__main__":
     unittest.main()

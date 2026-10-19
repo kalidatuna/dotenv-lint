@@ -27,6 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="CODES",
         help="comma-separated rule codes to skip, e.g. W001,W003",
     )
+    ap.add_argument("--select", metavar="CODES", help="run only these comma-separated rule codes")
     ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return ap
 
@@ -38,7 +39,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = build_parser()
     args = ap.parse_args(argv)
     ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
-    unknown = ignored - RULE_CODES
+    selected = ({c.strip().upper() for c in args.select.split(",") if c.strip()}
+                if args.select is not None else RULE_CODES)
+    unknown = (ignored | selected) - RULE_CODES
     if unknown:
         ap.error("unknown rule code(s): " + ", ".join(sorted(unknown)))
     if args.files.count("-") + int(args.example == "-") > 1:
@@ -56,7 +59,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     failed = False
     report = []
     if example is not None:
-        example_issues = [i for i in check(example) if i.severity == ERROR and i.code not in ignored]
+        example_issues = [i for i in check(example) if i.severity == ERROR and i.code in selected and i.code not in ignored]
         failed = bool(example_issues)
         for issue in example_issues:
             if args.format == "json":
@@ -68,7 +71,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         issues = check(result)
         if example is not None:
             issues = sorted(issues + compare(result, example), key=lambda i: (i.line, i.code))
-        issues = [i for i in issues if i.code not in ignored]
+        issues = [i for i in issues if i.code in selected and i.code not in ignored]
         if args.format == "json":
             report.extend(dict(asdict(i), file=name) for i in issues)
         elif not args.quiet:
