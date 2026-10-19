@@ -80,6 +80,14 @@ class CliTest(unittest.TestCase):
             f.write(b"\xef\xbb\xbfA=1\r\nB=2\r\n")
         self.assertEqual(self.run_cli(path)[:2], (0, ""))
 
+    def test_invalid_utf8_returns_read_error(self):
+        path = os.path.join(self.tmp.name, "invalid.env")
+        with open(path, "wb") as handle:
+            handle.write(b"A=\xff")
+        code, out, err = self.run_cli(path)
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn("UTF-8", err)
+
 
 if __name__ == "__main__":
     unittest.main()
