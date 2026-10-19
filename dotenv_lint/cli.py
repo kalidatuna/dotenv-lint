@@ -45,6 +45,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
     failed = False
     report = []
+    if example is not None:
+        example_issues = [i for i in check(example) if i.severity == ERROR and i.code not in ignored]
+        failed = bool(example_issues)
+        for issue in example_issues:
+            if args.format == "json":
+                report.append(dict(asdict(issue), file=args.example))
+            else:
+                print(f"{args.example}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
     for name, text in texts:
         result = parse(text)
         issues = check(result)

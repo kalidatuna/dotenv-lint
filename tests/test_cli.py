@@ -88,6 +88,15 @@ class CliTest(unittest.TestCase):
         self.assertEqual((code, out), (2, ""))
         self.assertIn("UTF-8", err)
 
+    def test_malformed_example_reports_its_own_path(self):
+        env = self.write(".env", "A=1\n")
+        example = self.write(".env.example", 'A="unterminated\n')
+        code, out, _ = self.run_cli(env, "-e", example, "-f", "json")
+        self.assertEqual(code, 1)
+        self.assertTrue(any(i["file"] == example and i["code"] == "E001" for i in json.loads(out)))
+        example = self.write(".env.example", "A=\n")
+        self.assertEqual(self.run_cli(env, "-e", example, "--strict")[0], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
