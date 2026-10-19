@@ -16,9 +16,10 @@ from .rules import ERROR, check, compare
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="dotenv-lint", description="Lint .env files.")
-    ap.add_argument("files", nargs="*", default=[".env"], help="files to lint (default: .env)")
+    ap.add_argument("files", nargs="*", default=[".env"], help="files to lint; - reads stdin (default: .env)")
     ap.add_argument("-e", "--example", help="compare keys against this example file")
     ap.add_argument("-f", "--format", choices=["text", "json"], default="text")
+    ap.add_argument("-q", "--quiet", action="store_true", help="suppress text diagnostics; keep exit status")
     ap.add_argument("--strict", action="store_true", help="treat warnings as errors")
     ap.add_argument(
         "--ignore",
@@ -26,31 +27,54 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="CODES",
         help="comma-separated rule codes to skip, e.g. W001,W003",
     )
+    ap.add_argument("--select", metavar="CODES", help="run only these comma-separated rule codes")
     ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return ap
 
 
+RULE_CODES = frozenset({"E001", "E002", "E003", "E004", "W001", "W002", "W003"})
+
+
 def main(argv: Optional[List[str]] = None) -> int:
-    args = build_parser().parse_args(argv)
+    ap = build_parser()
+    args = ap.parse_args(argv)
+    ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
+    selected = ({c.strip().upper() for c in args.select.split(",") if c.strip()}
+                if args.select is not None else RULE_CODES)
+    unknown = (ignored | selected) - RULE_CODES
+    if unknown:
+        ap.error("unknown rule code(s): " + ", ".join(sorted(unknown)))
+    if args.files.count("-") + int(args.example == "-") > 1:
+        ap.error("stdin may only be read once")
     try:
         example = parse(_read(args.example)) if args.example else None
         texts = [(name, _read(name)) for name in args.files]
+    except UnicodeError:
+        print("dotenv-lint: input is not valid UTF-8", file=sys.stderr)
+        return 2
     except OSError as exc:
         print(f"dotenv-lint: {exc.filename}: {exc.strerror}", file=sys.stderr)
         return 2
 
-    ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
     failed = False
     report = []
+    if example is not None:
+        example_issues = [i for i in check(example) if i.severity == ERROR and i.code in selected and i.code not in ignored]
+        failed = bool(example_issues)
+        for issue in example_issues:
+            if args.format == "json":
+                report.append(dict(asdict(issue), file=args.example))
+            elif not args.quiet:
+                print(f"{args.example}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
     for name, text in texts:
         result = parse(text)
         issues = check(result)
         if example is not None:
             issues = sorted(issues + compare(result, example), key=lambda i: (i.line, i.code))
-        issues = [i for i in issues if i.code not in ignored]
+        issues = [i for i in issues if i.code in selected and i.code not in ignored]
         if args.format == "json":
             report.extend(dict(asdict(i), file=name) for i in issues)
-        else:
+        elif not args.quiet:
             for issue in issues:
                 print(f"{name}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
         failed = failed or any(args.strict or i.severity == ERROR for i in issues)
@@ -60,6 +84,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 def _read(name: str) -> str:
+    if name == "-":
+        return sys.stdin.read().removeprefix("\ufeff")
     # utf-8-sig drops the BOM that some Windows editors prepend.
     return Path(name).read_text(encoding="utf-8-sig")
 

@@ -29,6 +29,9 @@ dotenv-lint -e .env.example         # also compare keys with the example
 dotenv-lint --strict                # fail on warnings too
 dotenv-lint --ignore W001,W003      # skip specific rules
 dotenv-lint --format json           # machine-readable output
+dotenv-lint --select E001,E002,E003  # run only selected rules
+dotenv-lint --quiet                 # check exit status without text output
+printf 'PORT=8080\n' | dotenv-lint - # lint stdin
 ```
 
 Example output:
@@ -40,6 +43,16 @@ Example output:
 ```
 
 Line `0` means the issue concerns the whole file rather than one line.
+
+Rule codes are case-insensitive. Unknown codes in `--ignore` or `--select`
+exit with code 2. If both options include a rule, `--ignore` wins.
+`--quiet` suppresses text diagnostics, including example-file diagnostics;
+JSON output and read errors remain available.
+
+Use `-` once, as an input filename or `--example -`, to read stdin.
+Files use UTF-8, with an optional byte-order mark. Invalid UTF-8 exits 2.
+Example files are checked for syntax, invalid names, and duplicate keys;
+empty example values are allowed even with `--strict`.
 
 ## pre-commit
 
@@ -72,7 +85,7 @@ real `.env` files, so this is mainly useful for `.env.example` and templates.
 |------|---------|
 | 0    | No errors (warnings allowed unless `--strict`) |
 | 1    | At least one error, or any warning with `--strict` |
-| 2    | A file could not be read |
+| 2    | Invalid arguments, unreadable input, or invalid UTF-8 |
 
 ## Supported syntax
 
@@ -85,7 +98,9 @@ NAME="double quoted, supports \n \t \" \\ escapes"
 RAW='single quoted, taken literally'
 ```
 
-Multi-line values are not supported yet.
+Multi-line values are not supported yet. Only newline characters separate
+physical lines; CRLF files are supported. Spaces or tabs may follow `export`.
+`KEY= # comment` has an empty value, while `KEY=#literal` retains the hash.
 
 ## Development
 

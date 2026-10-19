@@ -29,17 +29,17 @@ class ParseResult:
 def parse(text: str) -> ParseResult:
     """Parse the contents of a .env file."""
     result = ParseResult()
-    for lineno, raw in enumerate(text.splitlines(), start=1):
+    for lineno, raw in enumerate(text.split("\n"), start=1):
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
         if "=" not in line:
             result.errors.append(ParseError(lineno, "expected KEY=VALUE"))
             continue
-        if line.startswith("export "):
-            line = line[len("export ") :].lstrip()
+        if line.startswith(("export ", "export\t")):
+            line = line[len("export") :].lstrip(" \t")
         key, rest = line.split("=", 1)
-        rest = rest.strip()
+        rest = "" if rest.startswith((" ", "\t")) and rest.lstrip().startswith("#") else rest.strip()
         try:
             value, quote = _parse_value(rest)
         except ValueError as exc:

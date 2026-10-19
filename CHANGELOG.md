@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Accept tabs after `export` and empty values followed by comments.
+- Preserve Unicode separators inside quoted values.
+- Handle invalid UTF-8 and validate example-file errors.
+- Reject unknown rule codes and add `--select`, `--quiet`, and stdin input.
+
+
 ## 0.1.0 - 2026-10-11
 
 First release.

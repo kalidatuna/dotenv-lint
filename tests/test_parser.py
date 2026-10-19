@@ -77,6 +77,23 @@ class ParseExtrasTest(unittest.TestCase):
         entry = parse("URL=http://x/#frag").entries[0]
         self.assertEqual(entry.value, "http://x/#frag")
 
+    def test_tab_after_export_prefix(self):
+        entry = parse("export\tAPI_KEY=abc").entries[0]
+        self.assertEqual((entry.key, entry.value), ("API_KEY", "abc"))
+        self.assertEqual(parse("exported=1").entries[0].key, "exported")
+
+    def test_comment_only_value_is_empty(self):
+        for source in ("A= # empty", "A=\t# empty"):
+            self.assertEqual(parse(source).entries[0].value, "")
+        self.assertEqual(parse("A=#literal").entries[0].value, "#literal")
+
+    def test_unicode_line_separator_stays_in_value(self):
+        for separator in ("\u2028", "\u0085", "\v", "\f"):
+            result = parse('A="left' + separator + 'right"\nB=2\r\n')
+            self.assertEqual(result.errors, [])
+            self.assertEqual(result.entries[0].value, "left" + separator + "right")
+            self.assertEqual(result.entries[1].line, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

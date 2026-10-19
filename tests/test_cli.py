@@ -80,6 +80,63 @@ class CliTest(unittest.TestCase):
             f.write(b"\xef\xbb\xbfA=1\r\nB=2\r\n")
         self.assertEqual(self.run_cli(path)[:2], (0, ""))
 
+    def test_invalid_utf8_returns_read_error(self):
+        path = os.path.join(self.tmp.name, "invalid.env")
+        with open(path, "wb") as handle:
+            handle.write(b"A=\xff")
+        code, out, err = self.run_cli(path)
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn("UTF-8", err)
+
+    def test_malformed_example_reports_its_own_path(self):
+        env = self.write(".env", "A=1\n")
+        example = self.write(".env.example", 'A="unterminated\n')
+        code, out, _ = self.run_cli(env, "-e", example, "-f", "json")
+        self.assertEqual(code, 1)
+        self.assertTrue(any(i["file"] == example and i["code"] == "E001" for i in json.loads(out)))
+        example = self.write(".env.example", "A=\n")
+        self.assertEqual(self.run_cli(env, "-e", example, "--strict")[0], 0)
+
+    def test_unknown_ignore_code_is_usage_error(self):
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            with self.assertRaises(SystemExit) as raised:
+                main(["--ignore", "W999"])
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn("W999", err.getvalue())
+
+    def test_stdin_input_and_bom(self):
+        from unittest.mock import patch
+        with patch("sys.stdin", io.StringIO("\ufeffA=1\nA=2\n")):
+            code, out, _ = self.run_cli("-", "-f", "json")
+        self.assertEqual(code, 1)
+        self.assertEqual(json.loads(out)[0]["file"], "-")
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as raised:
+                main(["-", "-e", "-"])
+        self.assertEqual(raised.exception.code, 2)
+
+    def test_quiet_keeps_failures_and_json(self):
+        env = self.write(".env", "A=1\nA=2\n")
+        example = self.write(".env.example", "bad line\n")
+        code, out, _ = self.run_cli(env, "-e", example, "--quiet")
+        self.assertEqual((code, out), (1, ""))
+        code, out, _ = self.run_cli(env, "--quiet", "-f", "json")
+        self.assertEqual(code, 1)
+        self.assertEqual(json.loads(out)[0]["code"], "E003")
+
+    def test_select_filters_both_files_and_ignore_wins(self):
+        env = self.write(".env", "A=\nA=1\n")
+        example = self.write(".env.example", "invalid\n")
+        code, out, _ = self.run_cli(env, "-e", example, "--select", "w001", "--strict")
+        self.assertEqual(code, 1)
+        self.assertIn("W001", out)
+        self.assertNotIn("E001", out)
+        self.assertNotIn("E003", out)
+        self.assertEqual(self.run_cli(env, "--select", "w001", "--ignore", "W001")[0], 0)
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                main(["--select", "TYPO"])
+
 
 if __name__ == "__main__":
     unittest.main()
