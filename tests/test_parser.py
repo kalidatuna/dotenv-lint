@@ -77,6 +77,11 @@ class ParseExtrasTest(unittest.TestCase):
         entry = parse("URL=http://x/#frag").entries[0]
         self.assertEqual(entry.value, "http://x/#frag")
 
+    def test_tab_after_export_prefix(self):
+        entry = parse("export\tAPI_KEY=abc").entries[0]
+        self.assertEqual((entry.key, entry.value), ("API_KEY", "abc"))
+        self.assertEqual(parse("exported=1").entries[0].key, "exported")
+
 
 if __name__ == "__main__":
     unittest.main()

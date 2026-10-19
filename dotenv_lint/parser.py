@@ -36,8 +36,8 @@ def parse(text: str) -> ParseResult:
         if "=" not in line:
             result.errors.append(ParseError(lineno, "expected KEY=VALUE"))
             continue
-        if line.startswith("export "):
-            line = line[len("export ") :].lstrip()
+        if line.startswith(("export ", "export\t")):
+            line = line[len("export") :].lstrip(" \t")
         key, rest = line.split("=", 1)
         rest = rest.strip()
         try:
