@@ -115,6 +115,15 @@ class CliTest(unittest.TestCase):
                 main(["-", "-e", "-"])
         self.assertEqual(raised.exception.code, 2)
 
+    def test_quiet_keeps_failures_and_json(self):
+        env = self.write(".env", "A=1\nA=2\n")
+        example = self.write(".env.example", "bad line\n")
+        code, out, _ = self.run_cli(env, "-e", example, "--quiet")
+        self.assertEqual((code, out), (1, ""))
+        code, out, _ = self.run_cli(env, "--quiet", "-f", "json")
+        self.assertEqual(code, 1)
+        self.assertEqual(json.loads(out)[0]["code"], "E003")
+
 
 if __name__ == "__main__":
     unittest.main()

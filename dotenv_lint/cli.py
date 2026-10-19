@@ -19,6 +19,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("files", nargs="*", default=[".env"], help="files to lint; - reads stdin (default: .env)")
     ap.add_argument("-e", "--example", help="compare keys against this example file")
     ap.add_argument("-f", "--format", choices=["text", "json"], default="text")
+    ap.add_argument("-q", "--quiet", action="store_true", help="suppress text diagnostics; keep exit status")
     ap.add_argument("--strict", action="store_true", help="treat warnings as errors")
     ap.add_argument(
         "--ignore",
@@ -60,7 +61,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         for issue in example_issues:
             if args.format == "json":
                 report.append(dict(asdict(issue), file=args.example))
-            else:
+            elif not args.quiet:
                 print(f"{args.example}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
     for name, text in texts:
         result = parse(text)
@@ -70,7 +71,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         issues = [i for i in issues if i.code not in ignored]
         if args.format == "json":
             report.extend(dict(asdict(i), file=name) for i in issues)
-        else:
+        elif not args.quiet:
             for issue in issues:
                 print(f"{name}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
         failed = failed or any(args.strict or i.severity == ERROR for i in issues)
