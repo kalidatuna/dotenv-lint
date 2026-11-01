@@ -33,6 +33,9 @@ def parse(text: str) -> ParseResult:
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
+        if "\0" in line:
+            result.errors.append(ParseError(lineno, "NUL bytes are not allowed in assignments"))
+            continue
         if "=" not in line:
             result.errors.append(ParseError(lineno, "expected KEY=VALUE"))
             continue
