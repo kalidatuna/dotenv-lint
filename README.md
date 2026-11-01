@@ -95,7 +95,8 @@ NAME="double quoted, supports \n \t \" \\ escapes"
 RAW='single quoted, taken literally'
 ```
 
-Multi-line values are not supported yet.
+Multi-line values are not supported yet. See [parsing behavior](docs/parsing.md)
+for comment, encoding, and literal-value details.
 
 ## Development
 
