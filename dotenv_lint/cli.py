@@ -96,6 +96,10 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 def _read(name: str) -> str:
     if name == "-":
+        # Decode the original bytes, independent of locale or PYTHONIOENCODING.
+        # String-only streams remain supported by callers embedding the CLI.
+        if hasattr(sys.stdin, "buffer"):
+            return sys.stdin.buffer.read().decode("utf-8-sig")
         return sys.stdin.read()
     # utf-8-sig drops the BOM that some Windows editors prepend.
     return Path(name).read_text(encoding="utf-8-sig")
