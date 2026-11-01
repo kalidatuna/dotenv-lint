@@ -67,6 +67,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     except OSError as exc:
         print(f"dotenv-lint: {exc.filename}: {exc.strerror}", file=sys.stderr)
         return 2
+    except ValueError:
+        print("dotenv-lint: invalid input path", file=sys.stderr)
+        return 2
 
     if example is not None:
         invalid = [issue for issue in check(example) if issue.severity == ERROR]
