@@ -10,7 +10,16 @@ from .parser import ParseResult
 
 ERROR = "error"
 WARNING = "warning"
-RULE_CODES = frozenset({"E001", "E002", "E003", "E004", "W001", "W002", "W003"})
+RULE_DESCRIPTIONS = {
+    "E001": "Invalid assignment syntax",
+    "E002": "Invalid variable name",
+    "E003": "Duplicate variable name",
+    "E004": "Variable missing from the input but present in the example",
+    "W001": "Empty unquoted value",
+    "W002": "Whitespace in an unquoted value",
+    "W003": "Variable absent from the example",
+}
+RULE_CODES = frozenset(RULE_DESCRIPTIONS)
 
 KEY_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 

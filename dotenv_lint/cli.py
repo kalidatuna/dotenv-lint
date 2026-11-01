@@ -11,7 +11,7 @@ from typing import List, Optional
 
 from . import __version__
 from .parser import parse
-from .rules import ERROR, RULE_CODES, check, compare
+from .rules import ERROR, RULE_CODES, RULE_DESCRIPTIONS, check, compare
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -28,6 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="CODES",
         help="comma-separated rule codes to skip, e.g. W001,W003",
     )
+    ap.add_argument("--list-rules", action="store_true", help="list supported rules without reading inputs")
     ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return ap
 
@@ -46,6 +47,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     unknown = (ignored | selected) - RULE_CODES
     if unknown:
         ap.error("unknown rule codes: " + ", ".join(sorted(unknown)))
+    if args.list_rules:
+        rules = [dict(code=code, severity="error" if code.startswith("E") else "warning",
+                      description=RULE_DESCRIPTIONS[code]) for code in sorted(RULE_CODES)]
+        if args.format == "json":
+            print(json.dumps(rules, indent=2))
+        else:
+            for rule in rules:
+                print(f"{rule['code']} {rule['severity']}: {rule['description']}")
+        return 0
     if args.example == "-" and "-" in args.files:
         ap.error("stdin cannot be both an input file and the example")
     try:
