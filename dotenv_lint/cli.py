@@ -44,7 +44,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         ap.error("stdin cannot be both an input file and the example")
     try:
         example = parse(_read(args.example)) if args.example else None
-        texts = [(name, _read(name)) for name in args.files]
+        texts = [(name, _read(name)) for name in dict.fromkeys(args.files)]
     except UnicodeError:
         print("dotenv-lint: input is not valid UTF-8", file=sys.stderr)
         return 2
