@@ -20,6 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("-e", "--example", help="compare keys against this example file")
     ap.add_argument("-f", "--format", choices=["text", "json"], default="text")
     ap.add_argument("-q", "--quiet", action="store_true", help="suppress text diagnostics; keep exit status")
+    ap.add_argument("--select", metavar="CODES", help="only report these comma-separated rule codes")
     ap.add_argument("--strict", action="store_true", help="treat warnings as errors")
     ap.add_argument(
         "--ignore",
@@ -37,7 +38,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
     if args.quiet and args.format == "json":
         ap.error("--quiet cannot be combined with --format json")
-    unknown = ignored - RULE_CODES
+    selected = RULE_CODES if args.select is None else {
+        c.strip().upper() for c in args.select.split(",") if c.strip()
+    }
+    if not selected:
+        ap.error("--select requires at least one rule code")
+    unknown = (ignored | selected) - RULE_CODES
     if unknown:
         ap.error("unknown rule codes: " + ", ".join(sorted(unknown)))
     if args.example == "-" and "-" in args.files:
@@ -66,7 +72,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         issues = check(result)
         if example is not None:
             issues = sorted(issues + compare(result, example), key=lambda i: (i.line, i.code))
-        issues = [i for i in issues if i.code not in ignored]
+        issues = [i for i in issues if i.code in selected and i.code not in ignored]
         if args.format == "json":
             report.extend(dict(asdict(i), file=name) for i in issues)
         elif not args.quiet:
