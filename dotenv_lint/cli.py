@@ -37,6 +37,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     unknown = ignored - RULE_CODES
     if unknown:
         ap.error("unknown rule codes: " + ", ".join(sorted(unknown)))
+    if args.example == "-" and "-" in args.files:
+        ap.error("stdin cannot be both an input file and the example")
     try:
         example = parse(_read(args.example)) if args.example else None
         texts = [(name, _read(name)) for name in args.files]
@@ -74,6 +76,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 def _read(name: str) -> str:
+    if name == "-":
+        return sys.stdin.read()
     # utf-8-sig drops the BOM that some Windows editors prepend.
     return Path(name).read_text(encoding="utf-8-sig")
 
