@@ -28,7 +28,10 @@ dotenv-lint .env .env.local         # lint several files
 dotenv-lint -e .env.example         # also compare keys with the example
 dotenv-lint --strict                # fail on warnings too
 dotenv-lint --ignore W001,W003      # skip specific rules
-dotenv-lint --format json           # machine-readable output
+dotenv-lint --select E001,E002      # only report the selected rules
+dotenv-lint --list-rules            # list available rule codes
+dotenv-lint --format json           # JSON array of diagnostics
+dotenv-lint --format jsonl          # one JSON diagnostic per line
 dotenv-lint --quiet                 # exit status without text diagnostics
 cat .env | dotenv-lint -            # read standard input
 ```
@@ -46,8 +49,20 @@ supply one side of a comparison, never both. Repeated identical input paths
 are checked once, in their first specified order.
 
 `--quiet` suppresses text lint findings while preserving the exit code. Input
-and argument errors still go to stderr. It cannot be combined with JSON output.
-Unknown codes passed to `--ignore` are argument errors, including typos.
+and argument errors still go to stderr. It cannot be combined with JSON or JSON Lines output.
+Unknown codes passed to `--ignore` or `--select` are argument errors, including
+typos. Codes are case-insensitive. `--select` requires at least one code;
+`--ignore` removes codes from that selection. Filtering controls both diagnostics
+and the exit status. Invalid comparison templates remain input errors even when
+their rule codes are ignored or excluded.
+
+`--list-rules` prints the full rule inventory without reading files. Combine it
+with `--format json` or `--format jsonl` for code, severity, and description fields.
+
+JSON diagnostics contain `file`, `line`, `code`, `severity`, `message`, and `key`.
+Clean input produces `[]` in JSON mode and no records in JSON Lines mode. Input
+errors go to stderr and return 2. A missing example key uses line 0. Values never
+appear in diagnostics.
 
 Line `0` means the issue concerns the whole file rather than one line.
 
@@ -97,6 +112,8 @@ RAW='single quoted, taken literally'
 
 Multi-line values are not supported yet. See [parsing behavior](docs/parsing.md)
 for comment, encoding, and literal-value details.
+
+See [automation examples](docs/automation.md) for CI and diagnostic consumers.
 
 ## Development
 

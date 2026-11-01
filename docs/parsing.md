@@ -13,7 +13,12 @@ shell commands, expanding variables, or changing the process environment.
   escapes; unknown escapes keep their backslash.
 - Text after a closing quote must be whitespace or a comment.
 
-The CLI reads files as UTF-8 with an optional BOM. Invalid encoding returns 2.
+Assignments containing actual NUL bytes are syntax errors (E001). A literal
+backslash followed by `0` remains text; it is not a supported escape.
+
+The CLI reads files and piped input as UTF-8 with an optional BOM, independently
+of the Python stream's locale encoding. Invalid encoding returns 2. Invalid
+filesystem paths also return 2 without a traceback.
 Comparison templates must have valid syntax, valid key names, and unique keys.
 Empty placeholder values in templates are allowed. Diagnostics include key names
 and line numbers, without copying values.
