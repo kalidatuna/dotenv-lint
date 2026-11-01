@@ -29,6 +29,8 @@ dotenv-lint -e .env.example         # also compare keys with the example
 dotenv-lint --strict                # fail on warnings too
 dotenv-lint --ignore W001,W003      # skip specific rules
 dotenv-lint --format json           # machine-readable output
+dotenv-lint --quiet                 # exit status without text diagnostics
+cat .env | dotenv-lint -            # read standard input
 ```
 
 Example output:
@@ -38,6 +40,14 @@ Example output:
 .env:4: E003 error: duplicate key 'PORT' (first defined on line 2)
 .env:7: W002 warning: GREETING value contains whitespace; wrap it in quotes
 ```
+
+Use `-` as the input path or `--example -` to read standard input. Stdin can
+supply one side of a comparison, never both. Repeated identical input paths
+are checked once, in their first specified order.
+
+`--quiet` suppresses text lint findings while preserving the exit code. Input
+and argument errors still go to stderr. It cannot be combined with JSON output.
+Unknown codes passed to `--ignore` are argument errors, including typos.
 
 Line `0` means the issue concerns the whole file rather than one line.
 
@@ -72,7 +82,7 @@ real `.env` files, so this is mainly useful for `.env.example` and templates.
 |------|---------|
 | 0    | No errors (warnings allowed unless `--strict`) |
 | 1    | At least one error, or any warning with `--strict` |
-| 2    | A file could not be read |
+| 2    | Invalid arguments, unreadable or invalid UTF-8 input, or malformed example file |
 
 ## Supported syntax
 
