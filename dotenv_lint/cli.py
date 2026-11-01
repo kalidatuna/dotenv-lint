@@ -11,7 +11,7 @@ from typing import List, Optional
 
 from . import __version__
 from .parser import parse
-from .rules import ERROR, check, compare
+from .rules import ERROR, RULE_CODES, check, compare
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -31,7 +31,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    args = build_parser().parse_args(argv)
+    ap = build_parser()
+    args = ap.parse_args(argv)
+    ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
+    unknown = ignored - RULE_CODES
+    if unknown:
+        ap.error("unknown rule codes: " + ", ".join(sorted(unknown)))
     try:
         example = parse(_read(args.example)) if args.example else None
         texts = [(name, _read(name)) for name in args.files]
@@ -49,7 +54,6 @@ def main(argv: Optional[List[str]] = None) -> int:
                 print(f"{args.example}:{issue.line}: {issue.code} error: {issue.message}", file=sys.stderr)
             return 2
 
-    ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
     failed = False
     report = []
     for name, text in texts:
