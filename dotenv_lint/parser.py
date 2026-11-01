@@ -39,6 +39,9 @@ def parse(text: str) -> ParseResult:
         if line.startswith(("export ", "export\t")):
             line = line[len("export ") :].lstrip()
         key, rest = line.split("=", 1)
+        # Strip comments before trimming assignment whitespace.
+        if rest.lstrip().startswith("#") and rest[:1] in (" ", "\t"):
+            rest = ""
         rest = rest.strip()
         try:
             value, quote = _parse_value(rest)
