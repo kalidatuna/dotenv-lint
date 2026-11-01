@@ -18,7 +18,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="dotenv-lint", description="Lint .env files.")
     ap.add_argument("files", nargs="*", default=[".env"], help="files to lint (default: .env)")
     ap.add_argument("-e", "--example", help="compare keys against this example file")
-    ap.add_argument("-f", "--format", choices=["text", "json"], default="text")
+    ap.add_argument("-f", "--format", choices=["text", "json", "jsonl"], default="text")
     ap.add_argument("-q", "--quiet", action="store_true", help="suppress text diagnostics; keep exit status")
     ap.add_argument("--select", metavar="CODES", help="only report these comma-separated rule codes")
     ap.add_argument("--strict", action="store_true", help="treat warnings as errors")
@@ -37,8 +37,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = build_parser()
     args = ap.parse_args(argv)
     ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
-    if args.quiet and args.format == "json":
-        ap.error("--quiet cannot be combined with --format json")
+    if args.quiet and args.format != "text":
+        ap.error("--quiet cannot be combined with machine-readable output")
     selected = RULE_CODES if args.select is None else {
         c.strip().upper() for c in args.select.split(",") if c.strip()
     }
@@ -52,6 +52,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                       description=RULE_DESCRIPTIONS[code]) for code in sorted(RULE_CODES)]
         if args.format == "json":
             print(json.dumps(rules, indent=2))
+        elif args.format == "jsonl":
+            for rule in rules:
+                print(json.dumps(rule))
         else:
             for rule in rules:
                 print(f"{rule['code']} {rule['severity']}: {rule['description']}")
@@ -88,6 +91,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         issues = [i for i in issues if i.code in selected and i.code not in ignored]
         if args.format == "json":
             report.extend(dict(asdict(i), file=name) for i in issues)
+        elif args.format == "jsonl":
+            for issue in issues:
+                print(json.dumps(dict(asdict(issue), file=name)))
         elif not args.quiet:
             for issue in issues:
                 print(f"{name}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
