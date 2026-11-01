@@ -29,7 +29,7 @@ class ParseResult:
 def parse(text: str) -> ParseResult:
     """Parse the contents of a .env file."""
     result = ParseResult()
-    for lineno, raw in enumerate(text.removeprefix("\ufeff").splitlines(), start=1):
+    for lineno, raw in enumerate(text.removeprefix("\ufeff").split("\n"), start=1):
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
