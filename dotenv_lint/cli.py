@@ -35,6 +35,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         example = parse(_read(args.example)) if args.example else None
         texts = [(name, _read(name)) for name in args.files]
+    except UnicodeError:
+        print("dotenv-lint: input is not valid UTF-8", file=sys.stderr)
+        return 2
     except OSError as exc:
         print(f"dotenv-lint: {exc.filename}: {exc.strerror}", file=sys.stderr)
         return 2
