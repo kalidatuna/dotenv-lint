@@ -42,6 +42,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"dotenv-lint: {exc.filename}: {exc.strerror}", file=sys.stderr)
         return 2
 
+    if example is not None:
+        invalid = [issue for issue in check(example) if issue.severity == ERROR]
+        if invalid:
+            for issue in invalid:
+                print(f"{args.example}:{issue.line}: {issue.code} error: {issue.message}", file=sys.stderr)
+            return 2
+
     ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
     failed = False
     report = []
