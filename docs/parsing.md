@@ -4,8 +4,11 @@
 shell commands, expanding variables, or changing the process environment.
 
 - An optional leading UTF-8 BOM is ignored. A BOM inside a value is preserved.
-- LF and CRLF separate physical lines. Unicode separators inside quoted values
-  remain content. Actual multiline quoted values are unsupported.
+- LF, CRLF, and CR separate physical lines, including mixed endings. File input,
+  piped input, and direct parser calls use the same line numbers and syntax rules.
+  Unicode separators inside quoted values remain content. Actual multiline
+  quoted values are unsupported. The double-quoted `\r` escape remains value
+  content, rather than starting a new physical line.
 - `export` followed by a space or tab is accepted. `export=value` is an ordinary
   key named `export`.
 - `A= # comment` has an empty value. `COLOR=#fff` preserves the hash value.

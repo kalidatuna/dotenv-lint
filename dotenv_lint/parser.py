@@ -29,6 +29,9 @@ class ParseResult:
 def parse(text: str) -> ParseResult:
     """Parse the contents of a .env file."""
     result = ParseResult()
+    # Match text-file universal newlines for direct API and byte-decoded stdin.
+    # Avoid splitlines(), which also splits Unicode characters inside values.
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
     for lineno, raw in enumerate(text.removeprefix("\ufeff").split("\n"), start=1):
         line = raw.strip()
         if not line or line.startswith("#"):
