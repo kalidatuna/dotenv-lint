@@ -63,6 +63,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         ap.error("stdin cannot be both an input file and the example")
     try:
         example = parse(_read(args.example)) if args.example else None
+        if example is not None:
+            invalid = [issue for issue in check(example) if issue.severity == ERROR]
+            if invalid:
+                for issue in invalid:
+                    print(f"{args.example}:{issue.line}: {issue.code} error: {issue.message}", file=sys.stderr)
+                return 2
         texts = [(name, _read(name)) for name in dict.fromkeys(args.files)]
     except UnicodeError:
         print("dotenv-lint: input is not valid UTF-8", file=sys.stderr)
@@ -73,13 +79,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     except ValueError:
         print("dotenv-lint: invalid input path", file=sys.stderr)
         return 2
-
-    if example is not None:
-        invalid = [issue for issue in check(example) if issue.severity == ERROR]
-        if invalid:
-            for issue in invalid:
-                print(f"{args.example}:{issue.line}: {issue.code} error: {issue.message}", file=sys.stderr)
-            return 2
 
     failed = False
     report = []

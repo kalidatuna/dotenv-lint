@@ -37,3 +37,8 @@ dotenv-lint -- -production.env
 To read configuration from another process, use `dotenv-lint -`. Stdin can also
 provide the example with `--example -`, but cannot supply both sides of the same
 comparison. The linter reads values without evaluating or expanding them.
+
+The example template is read and validated before any input files or input stdin
+are read. If the template has invalid syntax, invalid keys, or duplicate keys,
+the command returns 2 immediately and leaves the input stream unread. Correct
+the template first, then rerun the input check.
