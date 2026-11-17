@@ -18,6 +18,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="dotenv-lint", description="Lint .env files.")
     ap.add_argument("files", nargs="*", default=[".env"], help="files to lint (default: .env)")
     ap.add_argument("-e", "--example", help="compare keys against this example file")
+    ap.add_argument("--stdin-filename", metavar="NAME", help="use this diagnostic filename for input read from -")
     ap.add_argument("-f", "--format", choices=["text", "json", "jsonl"], default="text")
     ap.add_argument("-q", "--quiet", action="store_true", help="suppress text diagnostics; keep exit status")
     ap.add_argument("--select", metavar="CODES", help="only report these comma-separated rule codes")
@@ -36,6 +37,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[List[str]] = None) -> int:
     ap = build_parser()
     args = ap.parse_args(argv)
+    if args.stdin_filename is not None:
+        if not args.stdin_filename.strip():
+            ap.error("--stdin-filename requires a nonempty name")
+        if "-" not in args.files:
+            ap.error("--stdin-filename requires - as an input file")
     ignored = {c.strip().upper() for c in args.ignore.split(",") if c.strip()}
     if args.quiet and args.format != "text":
         ap.error("--quiet cannot be combined with machine-readable output")
@@ -83,19 +89,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     failed = False
     report = []
     for name, text in texts:
+        display_name = args.stdin_filename if name == "-" and args.stdin_filename is not None else name
         result = parse(text)
         issues = check(result)
         if example is not None:
             issues = sorted(issues + compare(result, example), key=lambda i: (i.line, i.code))
         issues = [i for i in issues if i.code in selected and i.code not in ignored]
         if args.format == "json":
-            report.extend(dict(asdict(i), file=name) for i in issues)
+            report.extend(dict(asdict(i), file=display_name) for i in issues)
         elif args.format == "jsonl":
             for issue in issues:
-                print(json.dumps(dict(asdict(issue), file=name)))
+                print(json.dumps(dict(asdict(issue), file=display_name)))
         elif not args.quiet:
             for issue in issues:
-                print(f"{name}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
+                print(f"{display_name}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")
         failed = failed or any(args.strict or i.severity == ERROR for i in issues)
     if args.format == "json":
         print(json.dumps(report, indent=2))

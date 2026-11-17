@@ -38,6 +38,18 @@ To read configuration from another process, use `dotenv-lint -`. Stdin can also
 provide the example with `--example -`, but cannot supply both sides of the same
 comparison. The linter reads values without evaluating or expanding them.
 
+For editor buffers or generated configuration, attach a diagnostic filename:
+
+```sh
+generate-config | dotenv-lint - --stdin-filename config/.env --format json
+```
+
+`--stdin-filename NAME` replaces `-` in text diagnostics and the `file` field in
+JSON and JSON Lines records. The name is only a label; it is never opened or
+written. Physical input files keep their own names, and rule selection, exit
+status, and example comparison keep working normally. The option requires `-`
+as a lint input and a nonblank name. It does not label `--example -`.
+
 The example template is read and validated before any input files or input stdin
 are read. If the template has invalid syntax, invalid keys, or duplicate keys,
 the command returns 2 immediately and leaves the input stream unread. Correct

@@ -34,6 +34,7 @@ dotenv-lint --format json           # JSON array of diagnostics
 dotenv-lint --format jsonl          # one JSON diagnostic per line
 dotenv-lint --quiet                 # exit status without text diagnostics
 cat .env | dotenv-lint -            # read standard input
+cat .env | dotenv-lint - --stdin-filename .env  # label piped diagnostics
 ```
 
 Example output:
