@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from . import __version__
+from .github import annotation
 from .parser import parse
 from .rules import ERROR, RULE_CODES, RULE_DESCRIPTIONS, check, compare
 
@@ -19,7 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("files", nargs="*", default=[".env"], help="files to lint (default: .env)")
     ap.add_argument("-e", "--example", help="compare keys against this example file")
     ap.add_argument("--stdin-filename", metavar="NAME", help="use this diagnostic filename for input read from -")
-    ap.add_argument("-f", "--format", choices=["text", "json", "jsonl"], default="text")
+    ap.add_argument("-f", "--format", choices=["text", "json", "jsonl", "github"], default="text")
     ap.add_argument("-q", "--quiet", action="store_true", help="suppress text diagnostics; keep exit status")
     ap.add_argument("--select", metavar="CODES", help="only report these comma-separated rule codes")
     ap.add_argument("--strict", action="store_true", help="treat warnings as errors")
@@ -54,6 +55,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     if unknown:
         ap.error("unknown rule codes: " + ", ".join(sorted(unknown)))
     if args.list_rules:
+        if args.format == "github":
+            ap.error("--list-rules requires text, json, or jsonl output")
         rules = [dict(code=code, severity="error" if code.startswith("E") else "warning",
                       description=RULE_DESCRIPTIONS[code]) for code in sorted(RULE_CODES)]
         if args.format == "json":
@@ -100,6 +103,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         elif args.format == "jsonl":
             for issue in issues:
                 print(json.dumps(dict(asdict(issue), file=display_name)))
+        elif args.format == "github":
+            for issue in issues:
+                print(annotation(display_name, issue))
         elif not args.quiet:
             for issue in issues:
                 print(f"{display_name}:{issue.line}: {issue.code} {issue.severity}: {issue.message}")

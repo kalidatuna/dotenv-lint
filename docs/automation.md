@@ -11,6 +11,26 @@ arguments cannot be used. Warnings fail only with `--strict`. Choose `--quiet`
 when an automation only needs the exit status; argument and input failures still
 appear on stderr.
 
+To emit GitHub Actions annotations from a workflow step after installing the tool:
+
+```yaml
+- name: Lint environment template
+  run: dotenv-lint .env.example --format github --strict
+```
+
+`--format github` writes one error or warning workflow command per lint finding,
+with the file, rule code as its title, and a line number when available. Missing
+example keys concern the whole file, so their annotation omits a line property.
+Filenames and messages are escaped using GitHub's workflow-command encoding.
+Clean files emit nothing. Rule filters and exit codes are unchanged; `--strict`
+still fails on warnings while their annotations retain warning severity. Input
+errors remain on stderr with exit code 2. This format cannot be combined with
+`--quiet` or `--list-rules`. For piped input, use `--stdin-filename` to associate
+annotations with a repository path.
+
+See the [GitHub workflow-command reference](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands)
+for runner annotation behavior.
+
 To check only assignment syntax and duplicate keys:
 
 ```sh

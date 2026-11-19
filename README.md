@@ -32,6 +32,7 @@ dotenv-lint --select E001,E002      # only report the selected rules
 dotenv-lint --list-rules            # list available rule codes
 dotenv-lint --format json           # JSON array of diagnostics
 dotenv-lint --format jsonl          # one JSON diagnostic per line
+dotenv-lint --format github         # GitHub Actions error/warning annotations
 dotenv-lint --quiet                 # exit status without text diagnostics
 cat .env | dotenv-lint -            # read standard input
 cat .env | dotenv-lint - --stdin-filename .env  # label piped diagnostics
@@ -50,7 +51,8 @@ supply one side of a comparison, never both. Repeated identical input paths
 are checked once, in their first specified order.
 
 `--quiet` suppresses text lint findings while preserving the exit code. Input
-and argument errors still go to stderr. It cannot be combined with JSON or JSON Lines output.
+and argument errors still go to stderr. It cannot be combined with JSON, JSON Lines,
+or GitHub Actions output.
 Unknown codes passed to `--ignore` or `--select` are argument errors, including
 typos. Codes are case-insensitive. `--select` requires at least one code;
 `--ignore` removes codes from that selection. Filtering controls both diagnostics
